@@ -265,8 +265,8 @@ find packages apps vendor -type d -name lib -not -path "*/node_modules/*" -prune
 | 项 | 值 |
 |---|---|
 | 安装包 | `TM-Agent-Windows-x64-0.1.0-rc.19-Setup.exe` |
-| 大小 | 174111886 字节（约 166 MB） |
-| SHA256 | `36342515e409eeee5274c3579cd6d736ee591f5f80c0a272940aaaa83cce2ed8` |
+| 大小 | 174111851 字节（约 166 MB） |
+| SHA256 | `6c91dac0ff5887e75a40ad1218fac6317e0e036cee06dd54841380ec5642d7c8` |
 | 可执行文件 | `TM Agent.exe` |
 | host 依赖闭包 | 326 个包 |
 | 构建产物 | 216 个 client artifact |
