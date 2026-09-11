@@ -8,6 +8,13 @@ import Database from 'better-sqlite3'
 import { build } from 'esbuild'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+
+/** Windows cannot exec the pnpm shell shim directly; route it through cmd. */
+const pnpmExec = (args, options) =>
+  execFileSync(process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm', args, {
+    ...options,
+    shell: process.platform === 'win32',
+  })
 const application = join(root, 'application')
 const temporary = join(root, '.application-build')
 const runtime = join(root, 'runtime')
@@ -17,8 +24,8 @@ await rm(runtime, { recursive: true, force: true })
 await mkdir(temporary, { recursive: true })
 await mkdir(join(runtime, 'api'), { recursive: true })
 
-execFileSync('pnpm', ['install', '--frozen-lockfile'], { cwd: application, stdio: 'inherit' })
-execFileSync('pnpm', ['--filter', '@llmwiki/contracts', 'build'], { cwd: application, stdio: 'inherit' })
+pnpmExec(['install', '--frozen-lockfile'], { cwd: application, stdio: 'inherit' })
+pnpmExec(['--filter', '@llmwiki/contracts', 'build'], { cwd: application, stdio: 'inherit' })
 
 await build({
   entryPoints: [join(application, 'apps/api/src/index.ts')],
@@ -36,16 +43,22 @@ await build({
 const webBuild = join(temporary, 'web')
 await cp(join(application, 'apps/web'), webBuild, {
   recursive: true,
-  filter: (source) => !source.includes('/.next') && !source.endsWith('/node_modules'),
+  // Windows uses backslashes: match either separator so .next and node_modules stay out.
+  filter: (source) => !/[\/].next([\/]|$)/.test(source) && !/[\/]node_modules$/.test(source),
 })
-await symlink(join(application, 'apps/web/node_modules'), join(webBuild, 'node_modules'))
+await rm(join(webBuild, 'node_modules'), { recursive: true, force: true })
+await symlink(
+  join(application, 'apps/web/node_modules'),
+  join(webBuild, 'node_modules'),
+  'dir',
+)
 const nextConfigPath = join(webBuild, 'next.config.ts')
 const nextConfig = await readFile(nextConfigPath, 'utf8')
 await writeFile(nextConfigPath, nextConfig.replace(
   'const nextConfig: NextConfig = {',
   'const nextConfig: NextConfig = {\n  output: "export",\n  trailingSlash: true,\n  images: { unoptimized: true },',
 ))
-execFileSync('pnpm', ['exec', 'next', 'build'], {
+pnpmExec(['exec', 'next', 'build'], {
   cwd: webBuild,
   env: { ...process.env, NEXT_PUBLIC_API_URL: '' },
   stdio: 'inherit',
