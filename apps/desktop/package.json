@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-desktop",
-  "description": "DeepSeek Harness desktop application with tray-owned Host lifecycle",
+  "description": "TM Agent desktop application with tray-owned Host lifecycle",
   "version": "0.1.0-rc.19",
   "private": true,
   "type": "module",
@@ -47,8 +47,8 @@
     "vitest": "^4.1.8"
   },
   "build": {
-    "appId": "ai.deepseek.harness.desktop",
-    "productName": "DeepSeek Harness",
+    "appId": "com.tianmu.tmagent",
+    "productName": "TM Agent",
     "afterPack": "./scripts/verify-packaged-runtime.ts",
     "asar": true,
     "files": [
@@ -90,7 +90,7 @@
     },
     "win": {
       "icon": "build/icon.png",
-      "artifactName": "DeepSeek-Harness-Desktop-Windows-x64-${version}-Setup.${ext}",
+      "artifactName": "TM-Agent-Windows-x64-${version}-Setup.${ext}",
       "target": [
         "nsis"
       ]
@@ -102,7 +102,7 @@
       "include": "build/installer.nsh",
       "createDesktopShortcut": "always",
       "createStartMenuShortcut": true,
-      "shortcutName": "DeepSeek Harness"
+      "shortcutName": "TM Agent"
     },
     "linux": {
       "category": "Development",

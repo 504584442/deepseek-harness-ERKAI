@@ -17,7 +17,7 @@ const REQUIRED_HOST_FILES = [
   ['@deepseek-ai', 'dsh-web-frontend', 'dist', 'dsh-desktop', 'jiutian-deep-space-compute-observatory.webp'],
   ['@deepseek-ai', 'dsh-web-frontend', 'dist', 'dsh-desktop', 'jiutian-quantum-glass-laboratory.webp'],
   ['@deepseek-ai', 'dsh-web-frontend', 'dist', 'dsh-desktop', 'jiutian-dawn-compute-horizon.webp'],
-  ['@deepseek-ai', 'dsh-web-frontend', 'dist', 'dsh-desktop', 'beyondata-logo.png'],
+  ['@deepseek-ai', 'dsh-web-frontend', 'dist', 'dsh-desktop', 'tm-logo.png'],
 ] as const
 
 const REQUIRED_WINDOWS_HOST_FILES = [

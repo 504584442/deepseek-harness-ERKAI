@@ -12,7 +12,7 @@ describe('bundled Preset Square catalog', () => {
     const items = await catalog.list()
     expect(items).toHaveLength(7)
     expect(items.map(item => item.source)).toEqual(Array(7).fill('fufan-official'))
-    expect(items.map(item => item.publisher.username)).toEqual(Array(7).fill('赋范官方'))
+    expect(items.map(item => item.publisher.username)).toEqual(Array(7).fill('天幕官方'))
     expect(items.map(item => item.artifact.sourceDshVersion)).toEqual(Array(7).fill('0.1.0-rc.8'))
     expect(items.at(0)).toMatchObject({
       slug: 'fufan-llm-wiki-producer',

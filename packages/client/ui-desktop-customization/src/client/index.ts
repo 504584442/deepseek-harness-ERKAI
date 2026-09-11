@@ -116,7 +116,7 @@ export function apply(ctx: ClientContext): void {
   }, VisionEnhancementShortcut))
   ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
     name: 'sidebar.footer.action',
-    id: 'beyondata-brand',
+    id: 'tm-brand',
     order: 100,
   }, BrandBadge))
 }

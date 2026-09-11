@@ -35,7 +35,7 @@ async function writeRequiredMacRuntime(appOutDir: string): Promise<void> {
     ['@deepseek-ai', 'dsh-web-frontend', 'dist', 'dsh-desktop', 'jiutian-deep-space-compute-observatory.webp'],
     ['@deepseek-ai', 'dsh-web-frontend', 'dist', 'dsh-desktop', 'jiutian-quantum-glass-laboratory.webp'],
     ['@deepseek-ai', 'dsh-web-frontend', 'dist', 'dsh-desktop', 'jiutian-dawn-compute-horizon.webp'],
-    ['@deepseek-ai', 'dsh-web-frontend', 'dist', 'dsh-desktop', 'beyondata-logo.png'],
+    ['@deepseek-ai', 'dsh-web-frontend', 'dist', 'dsh-desktop', 'tm-logo.png'],
     ['pnpm', 'bin', 'pnpm.cjs'],
     ['@img', 'sharp-darwin-arm64', 'lib', 'sharp-darwin-arm64-test.node'],
   ]
@@ -130,7 +130,7 @@ describe('packaged desktop runtime verification', () => {
         ['@deepseek-ai', 'dsh-web-frontend', 'dist', 'dsh-desktop', 'jiutian-deep-space-compute-observatory.webp'],
         ['@deepseek-ai', 'dsh-web-frontend', 'dist', 'dsh-desktop', 'jiutian-quantum-glass-laboratory.webp'],
         ['@deepseek-ai', 'dsh-web-frontend', 'dist', 'dsh-desktop', 'jiutian-dawn-compute-horizon.webp'],
-        ['@deepseek-ai', 'dsh-web-frontend', 'dist', 'dsh-desktop', 'beyondata-logo.png'],
+        ['@deepseek-ai', 'dsh-web-frontend', 'dist', 'dsh-desktop', 'tm-logo.png'],
         ['pnpm', 'bin', 'pnpm.cjs'],
       ]
       for (const segments of required) {
@@ -168,7 +168,7 @@ describe('packaged desktop runtime verification', () => {
         ['@deepseek-ai', 'dsh-web-frontend', 'dist', 'dsh-desktop', 'jiutian-deep-space-compute-observatory.webp'],
         ['@deepseek-ai', 'dsh-web-frontend', 'dist', 'dsh-desktop', 'jiutian-quantum-glass-laboratory.webp'],
         ['@deepseek-ai', 'dsh-web-frontend', 'dist', 'dsh-desktop', 'jiutian-dawn-compute-horizon.webp'],
-        ['@deepseek-ai', 'dsh-web-frontend', 'dist', 'dsh-desktop', 'beyondata-logo.png'],
+        ['@deepseek-ai', 'dsh-web-frontend', 'dist', 'dsh-desktop', 'tm-logo.png'],
         ['pnpm', 'bin', 'pnpm.cjs'],
         ['@koromix', 'koffi-win32-x64', 'win32_x64', 'koffi.node'],
         ['node-addon-require-builtin-win32-x64-msvc', 'prebuilt', 'win32-x64-msvc-napi-v9.node'],

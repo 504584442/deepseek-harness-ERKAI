@@ -48,7 +48,7 @@ export function Sidebar() {
       <div className="border-t border-white/[0.06] px-4 py-4 lg:px-5">
         <div className="hidden lg:block">
           <div className="text-[12px] tracking-[0.08em] text-slate-600">
-            @2026 赋范空间 独家自研
+            @2026 天幕 独家自研
           </div>
         </div>
       </div>

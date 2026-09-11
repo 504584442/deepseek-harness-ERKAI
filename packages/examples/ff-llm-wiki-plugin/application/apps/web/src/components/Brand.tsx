@@ -5,7 +5,7 @@ export function Brand({ compact = false }: { compact?: boolean }) {
     <div className="flex items-center gap-2.5">
       <div className="h-9 w-9 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-black">
         <Image
-          src="/brand/ff-logo.png"
+          src="/brand/tm-logo.png"
           alt="FF Logo"
           width={36}
           height={36}
@@ -15,7 +15,7 @@ export function Brand({ compact = false }: { compact?: boolean }) {
       </div>
       {!compact && (
         <div className="whitespace-nowrap text-[13px] font-semibold tracking-tight text-white lg:text-[15px]">
-          FF - LLM Wiki 企业知识库
+          天幕知识库
         </div>
       )}
     </div>

@@ -40,7 +40,7 @@ const OFFICIAL_ITEM = {
   title: 'AI WebApp',
   description: '1 套 Agent Preset + 3 个 Skills。',
   source: 'fufan-official',
-  publisher: { username: '赋范官方' },
+  publisher: { username: '天幕官方' },
   artifact: {
     ...ITEM.artifact,
     downloadUrl: 'https://www.dshdesktop.com/preset/api/v1/presets/fufan-ai-webapp/download',
@@ -185,7 +185,7 @@ function props(values: Partial<PresetSquareInjected> = {}): PresetSquareInjected
 }
 
 describe('Preset Square shared surface', () => {
-  it('defaults to 赋范官方, switches sources as tabs, and renders semantic SVG artwork', async () => {
+  it('defaults to 天幕官方, switches sources as tabs, and renders semantic SVG artwork', async () => {
     const { container } = render(<PresetSquarePanel {...props({
       listPresetSquare: async () => ({
         items: [...OFFICIAL_ARTWORK_ITEMS, ITEM], total: 8, sort: 'downloads', fetchedAt: '2026-08-17T08:00:00.000Z',
@@ -205,7 +205,7 @@ describe('Preset Square shared surface', () => {
     expect(officialCards.item(0).textContent).toContain(LLM_WIKI_ITEM.title)
 
     const officialCard = screen.getByText(OFFICIAL_ITEM.title).closest('article')
-    if (officialCard === null) throw new Error('赋范官方卡片未渲染')
+    if (officialCard === null) throw new Error('天幕官方卡片未渲染')
     expect(within(officialCard).getByText(zh.presetFufanOfficialBadge)).toBeTruthy()
     for (const item of OFFICIAL_ARTWORK_ITEMS) {
       expect(container.querySelector(`[data-artwork="${item.presetId}"] svg`)).toBeTruthy()
@@ -227,7 +227,7 @@ describe('Preset Square shared surface', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: new RegExp(zh.presetFufanOfficialTitle) }))
     const restoredOfficialCard = (await screen.findByText(OFFICIAL_ITEM.title)).closest('article')
-    if (restoredOfficialCard === null) throw new Error('赋范官方卡片未恢复')
+    if (restoredOfficialCard === null) throw new Error('天幕官方卡片未恢复')
     fireEvent.click(within(restoredOfficialCard).getByRole('button', { name: zh.details }))
     const officialDialog = await screen.findByRole('dialog', { name: OFFICIAL_ITEM.title })
     expect(within(officialDialog).getByText(zh.presetFufanOfficialDisclaimer)).toBeTruthy()

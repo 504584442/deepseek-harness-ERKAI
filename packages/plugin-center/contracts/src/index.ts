@@ -1044,6 +1044,7 @@ const SHA512_INTEGRITY = /^sha512-[A-Za-z0-9+/]{86}==$/u
 const COLOR = /^#[0-9a-fA-F]{6}$/u
 const IDEMPOTENCY_KEY = /^[A-Za-z0-9][A-Za-z0-9._:-]*$/u
 const MEDIA_ORIGINS = new Set([
+  'https://deepseek.stream',
   'https://avatars.githubusercontent.com',
   'https://cdn.deepseek.com',
   'https://raw.githubusercontent.com',
@@ -1059,6 +1060,7 @@ const FRESHNESS = ['fresh', 'cached', 'stale'] as const
 const RISKS = ['low', 'medium', 'high'] as const
 const SECTIONS = ['featured', 'popular', 'recent'] as const
 const ARTIFACT_ORIGINS = new Set([
+  'https://deepseek.stream',
   'https://cdn.deepseek.com',
   'https://github.com',
   'https://objects.githubusercontent.com',

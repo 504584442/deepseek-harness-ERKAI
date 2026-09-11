@@ -4,7 +4,7 @@ import './globals.css'
 import { AppShell } from '../components/AppShell'
 
 export const metadata: Metadata = {
-  title: 'FF - LLM Wiki 企业知识库',
+  title: '天幕知识库',
   description: '面向企业资料的智能知识库系统',
 }
 

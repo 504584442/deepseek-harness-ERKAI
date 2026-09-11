@@ -93,7 +93,7 @@ import {
   withPresetRuntimeEnvironment,
 } from './preset-square/runtime-controller.ts'
 
-const APP_NAME = 'DeepSeek Harness'
+const APP_NAME = 'TM Agent'
 const WINDOW_WIDTH = 1440
 const WINDOW_HEIGHT = 920
 const DESKTOP_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..')

@@ -10,7 +10,7 @@ import {
 import { zipSync, type Zippable } from 'fflate'
 
 const ARCHIVE_MTIME = new Date('2026-08-17T00:00:00.000Z')
-const PUBLISHER = '赋范官方'
+const PUBLISHER = '天幕官方'
 const SOURCE_DSH_VERSION = '0.1.0-rc.8'
 
 interface BundledPresetDefinition {

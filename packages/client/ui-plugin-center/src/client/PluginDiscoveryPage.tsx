@@ -935,6 +935,15 @@ export function PluginDiscoveryPage({
           <header className={css.header}>
             <h1>{t('discoveryTitle')}</h1>
             <p>{t('discoveryIntro')}</p>
+            <a
+              className={css.marketLink}
+              href="https://deepseek.stream"
+              target="_blank"
+              rel="noreferrer"
+              title={t('marketHint')}
+            >
+              {t('marketTitle')}
+            </a>
           </header>
           <AgentPluginFinder findWithAgent={findWithAgent} t={t} />
           <label className={css.search}>

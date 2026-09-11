@@ -143,7 +143,7 @@ describe('desktop packaging configuration', () => {
     expect(builderPatch).toContain('ELECTRON_BUILDER_NSIS_TEMPLATE_DIR')
     expect(desktopPackage.build.win.target).toEqual(['nsis'])
     expect(desktopPackage.build.win.artifactName)
-      .toBe('DeepSeek-Harness-Desktop-Windows-x64-${version}-Setup.${ext}')
+      .toBe('TM-Agent-Windows-x64-${version}-Setup.${ext}')
     expect(desktopPackage.build.toolsets.nsis).toBe('1.2.1')
     expect(desktopPackage.build.nsis).toMatchObject({
       oneClick: false,
@@ -152,7 +152,7 @@ describe('desktop packaging configuration', () => {
       include: 'build/installer.nsh',
       createDesktopShortcut: 'always',
       createStartMenuShortcut: true,
-      shortcutName: 'DeepSeek Harness',
+      shortcutName: 'TM Agent',
     })
     expect(windowsInstallerInclude).toContain('--dsh-installer-quit')
     expect(windowsInstallerInclude).not.toContain('!macro customInit')

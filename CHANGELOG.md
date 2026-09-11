@@ -181,3 +181,106 @@ find packages apps vendor -type d -name lib -not -path "*/node_modules/*" -prune
 ---
 
 *记录人：ZCode（Pier）· 2026-09-12*
+
+---
+
+## 2026-09-12 · 品牌重塑为「天幕 / TM Agent」+ 插件市场接入
+
+### 一、本轮目标
+
+把整包（含内置应用）的对外品牌从「赋范空间 / DeepSeek Harness Studio」替换为 **天幕 / TM Agent**，
+并把 **https://deepseek.stream（DeepSeek Harness Hub 插件市场）** 接入为受信任的插件来源。
+
+### 二、产品身份
+
+| 项 | 新值 | 位置 |
+|---|---|---|
+| 产品名 | `TM Agent` | `apps/desktop/package.json` → `build.productName` |
+| 应用 ID | `com.tianmu.tmagent` | 同上 → `build.appId` |
+| 快捷方式名 | `TM Agent` | 同上 → `build.nsis.shortcutName` |
+| 安装包文件名 | `TM-Agent-Windows-x64-<ver>-Setup.exe` | 同上 → `build.win.artifactName` |
+| 可执行文件名 | `TM Agent.exe` | 由 `productName` 派生 |
+| 窗口/文档标题 | `TM Agent` | `apps/desktop/src/main.ts`（`APP_NAME`）、`scripts/client-build-environment.ts`（`DSH_CLIENT_TITLE`）、`apps/web/vite.config.ts` 与 `ui-renderer/DocumentTitle.tsx` 的 `DEFAULT_CLIENT_TITLE` |
+| 侧栏出品署名 | 「天幕出品」，链接指向 `https://deepseek.stream` | `ui-desktop-customization/BrandBadge.tsx` |
+
+### 三、Logo 设计（天幕）
+
+概念：**穹顶光弧（天幕）+ 核心光点（Agent）+ 星域深空**，配色走青→天蓝→紫的深空渐变。
+
+- 设计源文件（SVG）保留在开发目录；产物：
+  - `apps/desktop/build/icon.png`（1024×1024，应用与安装包图标）
+  - `apps/web/public/dsh-desktop/tm-logo.png` / `tm-logo@2x.png`（界面 Logo）
+  - `apps/desktop/resources/trayTemplate.png` / `@2x`（托盘，单色模板图）
+  - `apps/web/public/tm-favicon.svg`（站点图标）
+- 原 `beyondata-logo.png` 已删除。
+
+**关键取舍**：品牌字形改为天幕造型，但 **`FishLogo` 的 viewBox 仍保持 `0 0 23.16 17.04`、
+`BrandWordmark` 仍保持 `0 0 182 24` / `26 0 156 24`** —— 这样所有品牌插槽的尺寸计算与
+几何断言测试都无需改动，把改动面压到最小。
+
+- `ui-primitives/FishLogo.tsx`：鲸鱼路径 → 天幕穹顶字形（`currentColor`）
+- `ui-primitives/BrandWordmark.tsx`：矢量"deepseek + HARNESS"字标 → 字形 + `TM AGENT` 文本字标
+
+### 四、内置应用
+
+内置的 FF–LLM Wiki 一并换牌：
+
+- 界面标题与字标：`FF - LLM Wiki 企业知识库` → **天幕知识库**
+- 品牌 Logo：`brand/ff-logo.png` → `brand/tm-logo.png`（天幕）
+- 应用图标：`src/app/icon.svg` → 天幕图标
+- 页脚版权：`@2026 赋范空间 独家自研` → `@2026 天幕 独家自研`
+
+### 五、插件市场接入（deepseek.stream）
+
+该站点是 DeepSeek Harness 的社区插件市场（`/api/plugins` 提供分页插件目录：名称、版本、作者、
+图标、下载量、评分、`downloadUrl` 等）。接入方式：
+
+1. **受信任来源**：把 `https://deepseek.stream` 加入插件中心契约的两份白名单
+   （`packages/plugin-center/contracts/src/index.ts`）：
+   - `MEDIA_ORIGINS` —— 允许展示该市场提供的图标/封面
+   - `ARTIFACT_ORIGINS` —— 允许从该市场下载插件产物
+2. **发现页入口**：插件发现页头部新增「天幕插件市场」入口（新窗口打开该站点），
+   并补齐中英文文案与样式（`PluginDiscoveryPage.tsx` / `.module.css` / `locales.ts`）。
+
+> 说明：应用的"插件发现"是 **npm 包中心**（搜索 → 拉取 tarball → 校验 integrity）实现，
+> 而该市场的插件同样以 npm 包形式分发（如 `@dsh-external/*`），因此发现链路天然覆盖；
+> 本轮把该市场确认为**受信来源 + 显式入口**。若要把市场目录**直接内联进应用内的搜索结果**，
+> 需要市场提供带 integrity 的 npm 兼容产物或新增一个目录适配器，属后续增强。
+
+### 六、文案与测试同步
+
+- 中英文界面文案：`赋范官方/赋范桌面端/Fufan Official/Fufan Desktop` → `天幕官方/天幕桌面端/Tianmu Official/Tianmu Desktop`；
+  产品名相关表述 `DeepSeek Harness` → `TM Agent`（保留对上游 DeepSeek 的客观表述）
+- Preset 广场内置七套工作流的署名与描述同步换为「天幕官方」
+- 同步修改的断言/夹具（避免验证关卡失败）：
+  - `apps/desktop/tests/packaging-config.spec.ts`（artifactName / shortcutName）
+  - `packages/client/ui-desktop-customization/tests/brand-badge.client.spec.tsx`（署名与链接）
+  - `packages/client/ui-plugin-center/tests/preset-square.client.spec.tsx`、`apps/desktop/tests/preset-square-*.spec.ts`
+  - `apps/desktop/scripts/verify-packaged-runtime.ts` 与其 spec（logo 文件名）
+
+### 七、构建与产物（本轮）
+
+构建与打包全链路退出码 0，产物经启动冒烟验证。
+
+| 项 | 值 |
+|---|---|
+| 安装包 | `TM-Agent-Windows-x64-0.1.0-rc.19-Setup.exe` |
+| 大小 | 174111886 字节（约 166 MB） |
+| SHA256 | `36342515e409eeee5274c3579cd6d736ee591f5f80c0a272940aaaa83cce2ed8` |
+| 可执行文件 | `TM Agent.exe` |
+| host 依赖闭包 | 326 个包 |
+| 构建产物 | 216 个 client artifact |
+
+**验证**：启动打包后的应用 → 进程存活 → 监听本机端口（web UI）→ 正常退出；
+天幕 logo 与内置应用 `runtime/{api,seed,web}` 均在安装产物内。
+
+### 八、未改动 / 注意事项
+
+1. **包名与 scope 未改**（`@deepseek-ai/*`、`@fufan/dsh-plugin-llm-wiki`）：属于代码标识符，
+   改动会牵动全仓依赖与契约，本次不动。
+2. **自动更新源仍是赋范的 OSS 地址**（`apps/desktop/package.json` → `build.publish`）。
+   若要启用自动更新，需替换为天幕自己的更新源（并提供 `latest.yml` 与安装包）。
+3. 安装包**未做代码签名**，Windows SmartScreen 会提示，属正常现象。
+4. 上游核心仍为 `0.1.1-rc.2`，官方新版核心对齐未包含在本轮。
+
+*记录人：ZCode（Pier）· 2026-09-12*

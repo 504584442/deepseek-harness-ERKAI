@@ -68,7 +68,7 @@ const PRESET_FIXTURES: readonly PresetSquareItem[] = [
       : `fufan-case-0${String(index)}`,
     ...entry,
     source: 'fufan-official',
-    publisher: { username: '赋范官方' },
+    publisher: { username: '天幕官方' },
     artifact: {
       downloadUrl: `https://www.dshdesktop.com/preset/api/v1/presets/${entry.slug}/download`,
       sha256: String(index + 1).repeat(64),

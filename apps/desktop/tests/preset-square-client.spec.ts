@@ -99,7 +99,7 @@ describe('Desktop Preset Square client', () => {
   })
 
   it('keeps bundled first-party entries available and installable when the community service is offline', async () => {
-    const official = { ...ITEM, source: 'fufan-official' as const, publisher: { username: '赋范官方' } }
+    const official = { ...ITEM, source: 'fufan-official' as const, publisher: { username: '天幕官方' } }
     const fetcher = vi.fn<typeof fetch>(async (input) => {
       const url = new URL(input instanceof Request ? input.url : input.toString())
       if (url.origin === 'http://127.0.0.1:4321') return hostPreview(false)
@@ -116,7 +116,7 @@ describe('Desktop Preset Square client', () => {
       },
     )
 
-    await expect(client.list({ query: '赋范', sort: 'downloads' })).resolves.toMatchObject({
+    await expect(client.list({ query: '天幕', sort: 'downloads' })).resolves.toMatchObject({
       items: [{ source: 'fufan-official' }],
       total: 1,
     })

@@ -1080,3 +1080,21 @@
     animation: none;
   }
 }
+
+/* TM Agent: entry point to the Tianmu plugin market source. */
+.marketLink {
+  align-self: flex-start;
+  margin-top: 8px;
+  padding: 4px 10px;
+  border: 1px solid var(--dsw-alias-border-secondary);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dsw-alias-label-secondary);
+  text-decoration: none;
+}
+
+.marketLink:hover {
+  color: var(--dsw-alias-label-primary);
+  border-color: var(--dsw-alias-border-primary);
+}
