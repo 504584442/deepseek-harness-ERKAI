@@ -284,3 +284,99 @@ find packages apps vendor -type d -name lib -not -path "*/node_modules/*" -prune
 4. 上游核心仍为 `0.1.1-rc.2`，官方新版核心对齐未包含在本轮。
 
 *记录人：ZCode（Pier）· 2026-09-12*
+
+---
+
+## 2026-09-12 · 接入插件市场「一键安装」协议（dsh://）
+
+### 一、背景
+
+插件市场 **deepseek.stream** 的开发指南（`/guide` 第二节）定义了官方的一键安装联动协议：
+网页端通过自定义 URI Scheme **`dsh://plugin/install`** 唤起桌面客户端完成插件导入。
+市场侧已按该协议发起调用，但**客户端此前从未实现接收端**，因此点击"一键安装"没有任何反应。
+
+本轮把客户端这一半补齐。
+
+### 二、协议契约（按指南实现）
+
+| 项 | 值 |
+|---|---|
+| 协议头 | `dsh://` |
+| 路由 | `/plugin/install` |
+| 必填参数 | `id`、`name`、`version`、`repo` |
+| 可选参数 | `permissions`（逗号分隔）、`downloadUrl`（https 备用直链） |
+| 网页端发起 | 隐藏 iframe 或 `<a href="dsh://...">`（市场侧已实现） |
+
+### 三、客户端实现
+
+**1. 协议注册**
+
+- `apps/desktop/package.json` → `build.protocols`：安装器写入 Windows 注册表关联
+- `apps/desktop/src/main.ts` → `registerPluginLinkProtocol()`：运行时调用
+  `app.setAsDefaultProtocolClient('dsh')`（开发态附带入口脚本参数）
+
+**2. 深链捕获**
+
+- Windows / Linux：`second-instance` 的 `commandLine` + 首启 `process.argv`
+- macOS：`app.on('open-url')`
+- 捕获到的链接进入队列，由单一线程按到达顺序处理，避免并发弹窗
+
+**3. 参数解析与严格校验**（新增 `apps/desktop/src/plugin-link.ts`）
+
+- 校验 scheme / host / path 三段路由
+- 必填参数缺失即拒绝；`id` 必须为小写分隔标识；`version` 必须为语义化版本或 `latest`
+- `repo` 必须为 npm 包名或 `owner/repo`；`downloadUrl` 必须为 https
+- 全长度上限 + 控制字符拒绝（`MAX_LINK_LENGTH` / `MAX_PARAMETER_LENGTH`）
+
+**4. 授权弹窗**（对应用户指南步骤 2）
+
+展示**插件名称、标识、版本、来源、申请权限**，用户确认后才继续；取消则完全不动。
+
+**5. 安装执行（复用现有受信链路，不新增后门）**
+
+安装请求契约刻意只接受 `{pluginId, version, idempotencyKey}`（不接受 URL 或路径权威），
+因此深链安装走的是与插件中心完全相同的受信路径：
+
+1. `repo` 为 npm 包名时，从 npm 解析精确版本（`latest` → `dist-tags.latest`）
+2. 以包名检索受信目录，使该包进入目录快照
+3. 调用 `PluginOperationController.start()` → 兼容性预检 → 下载 → **完整性校验** → 安装 → 热重载
+
+若链接指向的是源码仓库（非 npm 包）、包未发布、或未通过目录预检，
+客户端给出明确原因并提示到插件中心/市场查看——**不降级校验、不静默安装**。
+
+### 四、测试
+
+新增 `apps/desktop/tests/plugin-link.spec.ts`（10 个用例）：
+
+- 路由识别（合法路由 / 错误 scheme、host、path、非 URL）
+- 参数解码（中文名称、权限列表、`latest` 哨兵、https 备用链）
+- 拒绝用例（缺必填、非法 id、非法版本、非 https 直链、非法 repo）
+- `pluginIdForNpmPackage` 与发现仓库派生规则一致（含 scoped 包）
+- 最新版本解析（正常 / 非版本号 / 请求失败）
+
+### 五、验证记录
+
+| 验证项 | 结果 |
+|---|---|
+| 单元测试 | 10/10 通过 |
+| 类型检查（桌面端） | 退出码 0 |
+| 注册表关联 | 启动打包版后 `HKCU\Software\Classes\dsh\shell\open\command` = `"...\TM Agent.exe" "%1"`，与指南规范一致 |
+| 端到端 | 向运行中的客户端发送 `dsh://plugin/install?...` → 单实例接住 → **授权弹窗正确显示**名称/标识/版本/来源/权限 |
+
+### 六、本轮产物
+
+| 项 | 值 |
+|---|---|
+| 安装包 | `TM-Agent-Windows-x64-0.1.0-rc.19-Setup.exe` |
+| 大小 | 174117869 字节 |
+| SHA256 | `6b8eecd2295aa7a9732c94472056ecf3d6345c9378572f8f56a8718924bea39b` |
+
+### 七、已知边界
+
+1. **仅支持 npm 分发的插件**。市场里以 zip 直链分发、未发布到 npm 的插件，
+   当前会被明确拒绝并提示到市场查看（因为受信链路要求完整性校验）。
+   若需支持，需要市场提供 `sha256` 字段或新增一条受控的外部来源安装通道。
+2. 安装过程的进度展示仍由插件中心页面负责；协议只负责"发起"。
+3. macOS 的协议关联依赖安装包写入 `Info.plist`（`build.protocols` 已声明，未在本机验证）。
+
+*记录人：ZCode（Pier）· 2026-09-12*

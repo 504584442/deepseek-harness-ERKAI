@@ -109,6 +109,14 @@
       "target": [
         "dir"
       ]
-    }
+    },
+    "protocols": [
+      {
+        "name": "TM Agent Plugin Link",
+        "schemes": [
+          "dsh"
+        ]
+      }
+    ]
   }
 }

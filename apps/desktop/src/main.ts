@@ -50,6 +50,15 @@ import { migrateLegacyDshmarketRegistration } from './plugin-center/legacy-dshma
 import { PluginRecoveryDiagnosticExporter } from './plugin-center/diagnostic-export.ts'
 import { PluginOperationController } from './plugin-center/operation-controller.ts'
 import {
+  isPluginLink,
+  PLUGIN_LINK_SCHEME,
+  isNpmPackageRepo,
+  parsePluginLink,
+  pluginIdForNpmPackage,
+  resolveLatestNpmVersion,
+  type PluginLinkRequest,
+} from './plugin-link.ts'
+import {
   PluginOperationJournal,
   UNREADABLE_PLUGIN_JOURNAL_OPERATION_ID,
 } from './plugin-center/operation-journal.ts'
@@ -107,6 +116,10 @@ let bootQuitPromise: Promise<void> | undefined
 let quitReleased = false
 let updateController: DesktopUpdateController | undefined
 let pluginOperationController: PluginOperationController | undefined
+let pluginCatalog: PluginCatalogRepository | undefined
+/** Plugin links captured before the plugin operation owner is ready. */
+const pendingPluginLinks: string[] = []
+let pluginLinkDrainActive = false
 let pluginRecoveryController: PluginRecoveryController | undefined
 let pluginDiagnosticExporter: PluginRecoveryDiagnosticExporter | undefined
 let pluginOwnedDataRemover: PluginOwnedDataRemover | undefined
@@ -683,6 +696,7 @@ async function initializePluginOperations(backend: PluginCenterBackend): Promise
   if (currentHost === undefined || currentLifecycle === undefined) {
     throw new Error('plugin operation backend requires the current Host and window lifecycle')
   }
+  pluginCatalog = backend.catalog
   const dshHome = resolveDshHome()
   const profileDirectory = join(dshHome, 'profiles', 'web')
   const root = join(app.getPath('userData'), 'plugin-center')
@@ -907,6 +921,11 @@ if (!app.requestSingleInstanceLock()) {
       return
     }
     void lifecycle?.showWindow()
+    void drainPluginLinks(commandLine)
+  })
+  app.on('open-url', (event: Event, url: string) => {
+    event.preventDefault()
+    void drainPluginLinks([url])
   })
   app.on('activate', () => { void lifecycle?.showWindow() })
   app.on('window-all-closed', () => {
@@ -917,7 +936,10 @@ if (!app.requestSingleInstanceLock()) {
     event.preventDefault()
     void requestAppQuit()
   })
-  app.whenReady().then(boot).catch(async (error: unknown) => {
+  registerPluginLinkProtocol()
+  void app.whenReady().then(boot).then(async () => {
+    await drainPluginLinks(process.argv)
+  }).catch(async (error: unknown) => {
     console.error('desktop startup failed:', error)
     if (bootQuitPromise === undefined) {
       await dialog.showMessageBox({
@@ -928,4 +950,131 @@ if (!app.requestSingleInstanceLock()) {
     }
     await requestAppQuit()
   })
+}
+
+/* ---------------------------------------------------------------------------
+ * dsh:// plugin install links (plugin market "一键安装" hand-off protocol)
+ * ------------------------------------------------------------------------- */
+
+/** Human-readable name written into the Windows protocol registry entry. */
+const PLUGIN_LINK_PROTOCOL_NAME = 'TM Agent Plugin Link'
+
+/**
+ * Register the `dsh://` scheme so the market's install buttons reach this client.
+ * The packaged installer writes the registry entry; this covers the running app.
+ */
+function registerPluginLinkProtocol(): void {
+  const entry = process.argv[1]
+  if (process.defaultApp === true && entry !== undefined) {
+    app.setAsDefaultProtocolClient(PLUGIN_LINK_SCHEME, process.execPath, [entry])
+    return
+  }
+  app.setAsDefaultProtocolClient(PLUGIN_LINK_SCHEME)
+}
+
+/** Queue the links carried by one invocation and handle them in arrival order. */
+async function drainPluginLinks(argv: readonly string[]): Promise<void> {
+  for (const value of argv) if (isPluginLink(value)) pendingPluginLinks.push(value)
+  if (pluginLinkDrainActive || pendingPluginLinks.length === 0) return
+  pluginLinkDrainActive = true
+  try {
+    while (pendingPluginLinks.length > 0) {
+      const link = pendingPluginLinks.shift()
+      if (link === undefined) break
+      await handlePluginLink(link)
+    }
+  } finally {
+    pluginLinkDrainActive = false
+  }
+}
+
+/** Report one plugin-link outcome without disturbing the running Host. */
+async function reportPluginLink(message: string, detail: string, type: 'warning' | 'info' = 'warning'): Promise<void> {
+  await dialog.showMessageBox({
+    type,
+    title: `${APP_NAME} · ${PLUGIN_LINK_PROTOCOL_NAME}`,
+    message,
+    detail,
+    buttons: ['好'],
+    noLink: true,
+  })
+}
+
+/**
+ * Handle one `dsh://plugin/install` link: show the authorization panel, then start the
+ * install of the exact reviewed version through the single plugin operation owner.
+ * @param link - Raw link captured from the OS or a process argument.
+ */
+async function handlePluginLink(link: string): Promise<void> {
+  void lifecycle?.showWindow()
+  let request: PluginLinkRequest
+  try {
+    request = parsePluginLink(link)
+  } catch (error: unknown) {
+    await reportPluginLink('插件链接无效', error instanceof Error ? error.message : String(error))
+    return
+  }
+  const permissions = request.permissions.length === 0 ? '常规权限' : request.permissions.join('、')
+  const authorization = await dialog.showMessageBox({
+    type: 'question',
+    title: `${APP_NAME} · 安装插件`,
+    message: `是否安装「${request.name}」？`,
+    detail: [
+      `插件标识：${request.id}`,
+      `版本：${request.version}`,
+      `来源：${request.repo}`,
+      `申请权限：${permissions}`,
+      '',
+      '确认后由插件中心从受信目录拉取该插件并校验完整性，安装完成会自动启用。',
+    ].join('\n'),
+    buttons: ['安装', '取消'],
+    defaultId: 1,
+    cancelId: 1,
+    noLink: true,
+  })
+  if (authorization.response !== 0) return
+  try {
+    await installFromPluginLink(request)
+  } catch (error: unknown) {
+    await reportPluginLink('插件安装未开始', error instanceof Error ? error.message : String(error))
+  }
+}
+
+/**
+ * Resolve the exact reviewed version and start a trusted install.
+ * @param request - Validated link request.
+ * @throws Error with a user-facing reason when the target cannot be installed.
+ */
+async function installFromPluginLink(request: PluginLinkRequest): Promise<void> {
+  const catalog = pluginCatalog
+  const controller = pluginOperationController
+  if (catalog === undefined || controller === undefined) throw new Error('插件中心尚未就绪，请稍后重试。')
+  if (!isNpmPackageRepo(request.repo)) {
+    throw new Error(`该链接指向源码仓库（${request.repo}），不是已发布的 npm 包。请在插件中心或插件市场查看并安装。`)
+  }
+  const version = request.version === 'latest'
+    ? await resolveLatestNpmVersion(request.repo, (input, init) => fetch(input, init))
+    : request.version
+  if (version === null) throw new Error(`无法解析 ${request.repo} 的最新版本，请确认该包已发布到 npm。`)
+  const pluginId = pluginIdForNpmPackage(request.repo)
+  // Surface the package in the reviewed catalog so its exact preflight can be selected.
+  try {
+    await catalog.list({ catalogKind: 'plugin', scope: 'public', query: request.repo, limit: 20 })
+  } catch (error: unknown) {
+    throw new Error(`目录检索失败：${error instanceof Error ? error.message : String(error)}`)
+  }
+  const result = await controller.start({
+    pluginId,
+    version,
+    idempotencyKey: `dsh-link.${Date.now().toString(36)}.${Math.random().toString(36).slice(2, 10)}`,
+  })
+  if (result.kind === 'started' || result.kind === 'joined') {
+    await reportPluginLink(
+      `已开始安装「${request.name}」`,
+      `版本 ${version}。完成后插件会自动启用，可在插件中心查看进度。`,
+      'info',
+    )
+    return
+  }
+  throw new Error('插件中心正忙（另有安装进行中），请稍后重试。')
 }
