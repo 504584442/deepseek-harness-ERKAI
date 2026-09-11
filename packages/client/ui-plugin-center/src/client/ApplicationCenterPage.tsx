@@ -53,7 +53,7 @@ function WikiArtwork() {
   )
 }
 
-/** Application catalog for complete products shipped by the Fufan Desktop team. */
+/** Application catalog for complete products shipped by the Tianmu Desktop team. */
 export function ApplicationCenterPage({
   inspectLlmWiki,
   openLlmWiki,
