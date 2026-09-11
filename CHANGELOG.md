@@ -380,3 +380,70 @@ find packages apps vendor -type d -name lib -not -path "*/node_modules/*" -prune
 3. macOS 的协议关联依赖安装包写入 `Info.plist`（`build.protocols` 已声明，未在本机验证）。
 
 *记录人：ZCode（Pier）· 2026-09-12*
+
+---
+
+## 2026-09-12 · 修复换牌后安装器"记不住上次安装目录"
+
+### 一、现象
+
+用户反馈：**已经装过一次，重新安装时安装器没有带出上次选择的目录**，而是回到默认路径
+`C:\Users\Administrator\AppData\Local\Programs\TM Agent`。
+
+### 二、根因（已实测确认）
+
+安装器用**一组由 appId 派生的 GUID 注册表键**记住安装位置：
+
+| 产品身份 | appId | 记忆键 |
+|---|---|---|
+| 换牌前 | `ai.deepseek.harness.desktop` | `HKCU\Software\324de6fc-994c-5e11-a4a4-be1f79b84b94` |
+| 换牌后 | `com.tianmu.tmagent` | 另一个全新 GUID |
+
+实测证据：旧键里**完好记录着**用户上次选择的目录
+
+```
+HKCU\Software\324de6fc-994c-5e11-a4a4-be1f79b84b94
+  InstallLocation = D:\Ai\Deepseek\DSERKAI\DeepSeek Harness
+```
+
+但**新 appId 的键为空**，而 electron-builder 的安装器只在"当前键非空"时才沿用上次目录，
+否则回落默认值。**所以是换牌改了应用身份导致的"失忆"，不是安装器损坏。**
+
+### 三、修复
+
+在 `apps/desktop/build/installer.nsh` 新增 `preInit` 宏（该钩子位于标准初始化之前）：
+
+1. 当前 appId 的记忆键为空时，读取**换牌前 GUID 键**的 `InstallLocation`
+2. 确认该目录**确实存在**（`FileExists "\*.*"`）后，把它**写入当前记忆键**
+3. 之后 electron-builder 的标准流程会像处理正常升级一样使用它
+
+同时对 `HKCU`（按用户安装）与 `HKLM`（按机器安装）各处理一次。
+只在新键为空、且旧目录真实存在时生效——**不会覆盖已存在的 TM Agent 安装位置**。
+
+### 四、验证
+
+启动重新打包的安装器，其"安装目录"字段实测为：
+
+```
+D:\Ai\Deepseek\DSERKAI\DeepSeek Harness
+```
+
+即**已正确继承换牌前用户选择的目录**。
+
+### 五、本轮产物
+
+| 项 | 值 |
+|---|---|
+| 安装包 | `TM-Agent-Windows-x64-0.1.0-rc.19-Setup.exe` |
+| 大小 | 174118010 字节 |
+| SHA256 | `290aec528520cdfc7e975f6f3818a07aa0bc99146b841e9d2698fb5aebfc6b6f` |
+
+### 六、说明
+
+- 该继承是**一次性的**：本次安装会把位置写入新记忆键，此后 TM Agent 的升级/重装
+  都由 electron-builder 原生逻辑沿用，无需再次继承。
+- 从**换牌前的旧版**升级的用户同样受益（不会突然落到默认目录）。
+- 旧版本目录（如本例的 `D:\Ai\Deepseek\DSERKAI\DeepSeek Harness`）内的旧程序文件
+  会由安装器按既有的"预览版替换"逻辑清理。
+
+*记录人：ZCode（Pier）· 2026-09-12*

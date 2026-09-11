@@ -1,3 +1,34 @@
+!macro preInit
+  # Rebrand migration. Changing the application id also changes the GUID key the
+  # installer uses to remember the install location, so an upgrade from the
+  # pre-TM-Agent build would otherwise fall back to the default directory.
+  # Adopt the previous build's registered location once by seeding the current
+  # key, which lets the stock installer path treat it exactly like an upgrade.
+  !define LEGACY_INSTALL_REGISTRY_KEY "Software\324de6fc-994c-5e11-a4a4-be1f79b84b94"
+
+  ReadRegStr $0 HKCU "${INSTALL_REGISTRY_KEY}" "InstallLocation"
+  ${If} $0 == ""
+    ReadRegStr $1 HKCU "${LEGACY_INSTALL_REGISTRY_KEY}" "InstallLocation"
+    ${If} $1 != ""
+      ${If} ${FileExists} "$1\*.*"
+        DetailPrint "Adopting the previous DeepSeek Harness install location: $1"
+        WriteRegStr HKCU "${INSTALL_REGISTRY_KEY}" "InstallLocation" "$1"
+      ${EndIf}
+    ${EndIf}
+  ${EndIf}
+
+  ReadRegStr $0 HKLM "${INSTALL_REGISTRY_KEY}" "InstallLocation"
+  ${If} $0 == ""
+    ReadRegStr $1 HKLM "${LEGACY_INSTALL_REGISTRY_KEY}" "InstallLocation"
+    ${If} $1 != ""
+      ${If} ${FileExists} "$1\*.*"
+        DetailPrint "Adopting the previous DeepSeek Harness install location: $1"
+        WriteRegStr HKLM "${INSTALL_REGISTRY_KEY}" "InstallLocation" "$1"
+      ${EndIf}
+    ${EndIf}
+  ${EndIf}
+!macroend
+
 !macro customCheckAppRunning
   # The assisted uninstaller checks processes before multi-user initialization,
   # so read its registered custom location before falling back to the temp copy.
